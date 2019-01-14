@@ -30,8 +30,8 @@ const uint8_t MPU6050_REGISTER_SIGNAL_PATH_RESET  = 0x68;
 int16_t AccelX, AccelY, AccelZ, Temperature, GyroX, GyroY, GyroZ;
 // ---------------------------------------------------------------------------------------
 
-const char* ssid = "Arboretum_Statehouse_netpap";
-const char* password = "statehouse@123";
+const char* ssid = "";
+const char* password = "";
 
 int connectPin = D1;
 int clientPin = D5;
