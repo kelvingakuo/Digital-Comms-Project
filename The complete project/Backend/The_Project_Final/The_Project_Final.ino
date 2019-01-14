@@ -116,7 +116,7 @@ void loop() {
 
     
   }else{
-    Serial.println("Client not connected");
+    Serial.print("!");
     digitalWrite(clientPin, LOW);
     client.stop();
   }
