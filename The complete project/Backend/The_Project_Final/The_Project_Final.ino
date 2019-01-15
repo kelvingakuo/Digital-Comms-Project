@@ -30,8 +30,8 @@ const uint8_t MPU6050_REGISTER_SIGNAL_PATH_RESET  = 0x68;
 int16_t AccelX, AccelY, AccelZ, Temperature, GyroX, GyroY, GyroZ;
 // ---------------------------------------------------------------------------------------
 
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "Arboretum_Statehouse_netpap";
+const char* password = "statehouse@123";
 
 int connectPin = D1;
 int clientPin = D5;
@@ -82,6 +82,8 @@ void loop() {
   if(client){
     Serial.println("Client connected");
     digitalWrite(clientPin, HIGH);
+    double tempAx, tempAy, tempAz, temptemp, tempGx, tempGy, tempGz; 
+    tempAx = tempAy = tempAz = temptemp = tempGx = tempGy = tempGz = 0.00; // For checking if data is new
     while(client.connected()){
            // Read data from MPU6050 and convert to JSON-like string
            double Ax, Ay, Az, temp, Gx, Gy, Gz;
@@ -96,22 +98,35 @@ void loop() {
           Gy = (double)GyroY/GyroScaleFactor;
           Gz = (double)GyroY/GyroScaleFactor;
 
-          // Create JSON
-          values["ax"] = Ax;
-          values["ay"] = Ay;
-          values["az"] = Az;
-          values["gx"] = Gx;
-          values["gy"] = Gy;
-          values["gz"] = Gz;
-          values["temp"] = temp;
+          if((tempAx - Ax > 0.5) || (tempAy - Ay > 0.5) || (tempAz - Az > 0.5) || (tempGx - Gx > 0.5) || (tempGy - Gy > 0.5) || (tempGz - Gz > 0.5)){// Only send data if it has changed
+            // Create JSON
+            values["ax"] = Ax;
+            values["ay"] = Ay;
+            values["az"] = Az;
+            values["gx"] = Gx;
+            values["gy"] = Gy;
+            values["gz"] = Gz;
+            values["temp"] = temp;
+  
+            // Convert to string
+            char jsonMessage[200];
+            values.prettyPrintTo(jsonMessage, sizeof(jsonMessage));
+                     
+           // Update for comparison
+           tempAx = Ax;
+           tempAy = Ay;
+           tempAz = Az;
+           tempGx = Gx;
+           tempGy = Gy;
+           tempGz = Gz;
 
-          // Convert to string
-          char jsonMessage[200];
-          values.prettyPrintTo(jsonMessage, sizeof(jsonMessage));
-                    
-         // Send the data
-         client.println(prepData(jsonMessage));
-         client.flush();
+           // Send the data
+           client.println(prepData(jsonMessage));
+           client.flush();
+           //delay(1000); //Check data every 1sec
+          }
+
+    yield(); // Needed due to how NodeMCU handles while()
     }
 
     
@@ -119,19 +134,18 @@ void loop() {
     Serial.print("!");
     digitalWrite(clientPin, LOW);
     client.stop();
+    delay(1000);
   }
-
-  delay(1000); //Send data every 1sec
 }
 
 
-// Place data in a packet to for sending
+// ------------------------------ Prepare data for sending ---------------
 String prepData(char toSend[]){
    String pg =
      String("HTTP/1.1 200 OK\r\n") +
             "Content-Type: application/json\r\n" +
             "\r\n" +
-            "data:  " + toSend +
+            "The updated data: " + toSend +
             "\r\n\n";
 
   return pg;
